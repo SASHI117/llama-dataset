@@ -13,19 +13,6 @@ import boto3
 
 router = APIRouter()
 
-# ===============================
-# S3 CLIENT (NEW – REQUIRED FOR /crops)
-# ===============================
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-    region_name=os.environ["AWS_REGION"],
-)
-
-# ===============================
-# EXISTING ROUTE (UNCHANGED)
-# ===============================
 @router.get("/behaviors")
 def get_behaviors():
     return [
@@ -37,27 +24,34 @@ def get_behaviors():
         "safety",
     ]
 
-# ===============================
-# NEW ROUTE: LIST CROPS FROM S3
-# ===============================
+
 @router.get("/crops")
 def list_crops():
-    response = s3.list_objects_v2(
-        Bucket=os.environ["S3_BUCKET_NAME"],
-        Delimiter="/"
-    )
+    try:
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            region_name=os.environ.get("AWS_REGION"),
+        )
 
-    crops = [
-        obj["Prefix"].rstrip("/")
-        for obj in response.get("CommonPrefixes", [])
-        if obj["Prefix"] != "metadata/"
-    ]
+        response = s3.list_objects_v2(
+            Bucket=os.environ["S3_BUCKET_NAME"],
+            Delimiter="/"
+        )
 
-    return {"crops": crops}
+        crops = [
+            obj["Prefix"].rstrip("/")
+            for obj in response.get("CommonPrefixes", [])
+            if obj["Prefix"] != "metadata/"
+        ]
 
-# ===============================
-# EXISTING ROUTE (UNCHANGED)
-# ===============================
+        return {"crops": crops}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/submit")
 def submit_data(payload: SubmissionRequest):
     try:
