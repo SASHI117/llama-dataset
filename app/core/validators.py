@@ -44,11 +44,17 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
+from datetime import datetime, timedelta
+from jose import jwt
 
+SECRET_KEY = "CHANGE_THIS_TO_ENV_LATER"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_HOURS = 8
 def create_access_token(data: dict):
-    payload = data.copy()
-    payload["exp"] = datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
