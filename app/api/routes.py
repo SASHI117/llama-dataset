@@ -1,46 +1,43 @@
-from pydantic import BaseModel
-from app.core.validators import verify_password, create_access_token
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
 from app.schemas.submission import SubmissionRequest
 from app.core.validators import (
     validate_crop,
     validate_behavior,
     validate_qa,
+    hash_password,
+    verify_password,
+    create_access_token,
 )
 from app.services.s3_service import append_jsonl
 from app.services.logging_service import log_submission
 
 import os
 import boto3
-from app.core.validators import hash_password
 
 router = APIRouter()
+
 # ===============================
-# INTERN USERS (TEMP)
+# INTERN USERS (TEMP – SAFE)
 # ===============================
 USERS = {
-    "slmintern1@farmvaidya.ai": {
-        "password": "intern1@123"
-    },
-    "slmintern2@farmvaidya.ai": {
-        "password": "intern2@456"
-    },
-    "slmintern3@farmvaidya.ai": {
-        "password": "intern3@789"
-    },
-    "slmintern4@farmvaidya.ai": {
-        "password": "intern4@321"
-    },
-    "slmintern5@farmvaidya.ai": {
-        "password": "intern5@654"
-    },
+    "slmintern1@farmvaidya.ai": {"password": "intern1@123"},
+    "slmintern2@farmvaidya.ai": {"password": "intern2@456"},
+    "slmintern3@farmvaidya.ai": {"password": "intern3@789"},
+    "slmintern4@farmvaidya.ai": {"password": "intern4@321"},
+    "slmintern5@farmvaidya.ai": {"password": "intern5@654"},
 }
+
 # ===============================
-# HASH PASSWORDS AT STARTUP
+# HASH PASSWORDS ON STARTUP
+# (runs once, safe)
 # ===============================
 for user in USERS.values():
-    user["password_hash"] = hash_password(user["password"])
-    del user["password"]
+    if "password" in user:
+        user["password_hash"] = hash_password(user["password"])
+        del user["password"]
+
 # ===============================
 # LOGIN API
 # ===============================
@@ -60,6 +57,9 @@ def login(req: LoginRequest):
     token = create_access_token({"sub": req.username})
     return {"access_token": token}
 
+# ===============================
+# EXISTING APIs (UNCHANGED)
+# ===============================
 @router.get("/behaviors")
 def get_behaviors():
     return [
