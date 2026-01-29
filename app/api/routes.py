@@ -74,7 +74,7 @@ def get_behaviors():
 
 
 @router.get("/crops")
-def list_crops():
+def list_crops(username: str = Depends(get_current_user)):
     try:
         s3 = boto3.client(
             "s3",
@@ -101,7 +101,10 @@ def list_crops():
 
 
 @router.post("/submit")
-def submit_data(payload: SubmissionRequest):
+def submit_data(
+    payload: SubmissionRequest,
+    username: str = Depends(get_current_user),
+):
     try:
         validate_crop(payload.crop)
         validate_behavior(payload.behavior)
