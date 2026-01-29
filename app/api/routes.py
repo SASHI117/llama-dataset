@@ -124,7 +124,7 @@ def submit_data(
             "crop": payload.crop,
             "behavior": payload.behavior,
             "count": len(entries),
-            "submitted_by": payload.submitted_by,
+            "submitted_by": username,
         })
 
         return {"status": "success", "inserted": len(entries)}
