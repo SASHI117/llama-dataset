@@ -25,15 +25,16 @@ def validate_qa(question: str, answer: str):
 
 
 # ===============================
-# AUTH HELPERS (FIXED, STABLE)
+# AUTH HELPERS (FINAL & CORRECT)
 # ===============================
 
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_MINUTES
 
-# ✅ DO NOT USE bcrypt on Railway / Python 3.12
 pwd_context = CryptContext(
     schemes=["pbkdf2_sha256"],
     deprecated="auto"
@@ -44,21 +45,16 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
-from datetime import datetime, timedelta
-from jose import jwt
 
-SECRET_KEY = "CHANGE_THIS_TO_ENV_LATER"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 8
 def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    payload = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)
+    payload.update({"exp": expire})
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError
+# ===============================
+# JWT DEPENDENCY
+# ===============================
 
 security = HTTPBearer()
 
