@@ -12,6 +12,7 @@ from app.services.logging_service import log_submission
 
 import os
 import boto3
+from app.core.validators import hash_password
 
 router = APIRouter()
 # ===============================
@@ -34,6 +35,31 @@ USERS = {
         "password": "intern5@654"
     },
 }
+# ===============================
+# HASH PASSWORDS AT STARTUP
+# ===============================
+for user in USERS.values():
+    user["password_hash"] = hash_password(user["password"])
+    del user["password"]
+# ===============================
+# LOGIN API
+# ===============================
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@router.post("/login")
+def login(req: LoginRequest):
+    user = USERS.get(req.username)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not verify_password(req.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({"sub": req.username})
+    return {"access_token": token}
+
 @router.get("/behaviors")
 def get_behaviors():
     return [
