@@ -1,3 +1,6 @@
+from fastapi import Depends
+from app.core.validators import get_current_user
+import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from fastapi import Depends
@@ -131,3 +134,41 @@ def submit_data(
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/my-submissions")
+def my_submissions(username: str = Depends(get_current_user)):
+    try:
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            region_name=os.environ.get("AWS_REGION"),
+        )
+
+        obj = s3.get_object(
+            Bucket=os.environ["S3_BUCKET_NAME"],
+            Key="metadata/logs/submissions.jsonl"
+        )
+
+        lines = obj["Body"].read().decode("utf-8").splitlines()
+
+        results = []
+        for line in lines:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            if record.get("submitted_by") == username:
+                results.append(record)
+
+        return {
+            "user": username,
+            "total": len(results),
+            "submissions": results
+        }
+
+    except s3.exceptions.NoSuchKey:
+        return {
+            "user": username,
+            "total": 0,
+            "submissions": []
+        }
