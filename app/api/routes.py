@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+from app.core.validators import verify_password, create_access_token
 from fastapi import APIRouter, HTTPException
 from app.schemas.submission import SubmissionRequest
 from app.core.validators import (
@@ -12,7 +14,26 @@ import os
 import boto3
 
 router = APIRouter()
-
+# ===============================
+# INTERN USERS (TEMP)
+# ===============================
+USERS = {
+    "slmintern1@farmvaidya.ai": {
+        "password": "intern1@123"
+    },
+    "slmintern2@farmvaidya.ai": {
+        "password": "intern2@456"
+    },
+    "slmintern3@farmvaidya.ai": {
+        "password": "intern3@789"
+    },
+    "slmintern4@farmvaidya.ai": {
+        "password": "intern4@321"
+    },
+    "slmintern5@farmvaidya.ai": {
+        "password": "intern5@654"
+    },
+}
 @router.get("/behaviors")
 def get_behaviors():
     return [
