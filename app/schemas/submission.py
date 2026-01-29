@@ -9,4 +9,3 @@ class SubmissionRequest(BaseModel):
     crop: str
     behavior: str
     qa_pairs: List[QAPair]
-    submitted_by: Optional[str] = None
