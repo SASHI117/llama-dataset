@@ -3,5 +3,5 @@ uvicorn
 boto3
 pydantic
 python-dotenv
-passlib[bcrypt]
+passlib
 python-jose
